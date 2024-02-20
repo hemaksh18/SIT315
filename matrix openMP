@@ -1,0 +1,76 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <chrono>
+#include <omp.h>
+
+using namespace std;
+using namespace std::chrono;
+
+void initializeMatrix(int** matrix, int N) {
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            matrix[i][j] = rand() % 10; // initialize with random values between 0 and 9
+        }
+    }
+}
+
+void multiplyMatrices(int** A, int** B, int** C, int N) {
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            C[i][j] = 0;
+            for (int k = 0; k < N; ++k) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
+
+int main() {
+    int N;
+    cout << "Enter the size of the matrices (N): ";
+    cin >> N;
+
+    // Allocate memory for matrices
+    int** A = new int*[N];
+    int** B = new int*[N];
+    int** C = new int*[N];
+    for (int i = 0; i < N; ++i) {
+        A[i] = new int[N];
+        B[i] = new int[N];
+        C[i] = new int[N];
+    }
+
+    // Seed random number generator
+    srand(time(0));
+
+    // Measure execution time of matrix initialization
+
+    initializeMatrix(A, N);
+    initializeMatrix(B, N);
+
+
+    // Measure execution time of matrix multiplication
+    auto start_mult = high_resolution_clock::now();
+    multiplyMatrices(A, B, C, N);
+    auto stop_mult = high_resolution_clock::now();
+    auto duration_mult = duration_cast<microseconds>(stop_mult - start_mult);
+
+    // Print execution time for initialization and multiplication
+   
+    cout << "Execution time of matrix multiplication: " << duration_mult.count() << " microseconds." << endl;
+
+    // Free dynamically allocated memory
+    for (int i = 0; i < N; ++i) {
+        delete[] A[i];
+        delete[] B[i];
+        delete[] C[i];
+    }
+    delete[] A;
+    delete[] B;
+    delete[] C;
+
+    return 0;
+}
