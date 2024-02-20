@@ -37,7 +37,7 @@ void multiply(int** A, int** B, int** C, int N)
 
 int main() {
     int N;
-    cout << "Enter the size of the matrices (N): ";
+    cout << "Enter the size of the matrix: ";
     cin >> N;
 
   
