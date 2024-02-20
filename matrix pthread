@@ -1,39 +1,51 @@
-#include <iostream>
-#include <cstdlib>
 #include <ctime>
 #include <chrono>
 #include <pthread.h>
+#include <iostream>
+#include <cstdlib>
 
 using namespace std;
 using namespace std::chrono;
 
-// Struct to pass data to pthread_create
-struct ThreadData {
-    int thread_id;
+
+struct thread {
+    int threadNum;
     int** A;
     int** B;
     int** C;
     int N;
 };
 
-// Function for each thread to perform matrix multiplication
-void* multiplyThread(void* arg) {
-    ThreadData* data = (ThreadData*) arg;
-    int thread_id = data->thread_id;
+
+void FillMatrix(int** matrix, int N) 
+{
+    for (int i = 0; i < N; ++i)
+    {
+        for (int j = 0; j < N; ++j) 
+        {
+            matrix[i][j] = rand() % 10; // initialize with random values between 0 and 9
+        }
+    }
+}
+
+void* multiply(void* arg)
+{
+    thread* data = (thread*) arg;
+    int threadNum = data->threadNum;
     int** A = data->A;
     int** B = data->B;
     int** C = data->C;
     int N = data->N;
 
-    // Each thread computes a chunk of rows of the result matrix C
-    int chunk_size = N / 2; // Assuming two threads
-    int start = thread_id * chunk_size;
-    int end = (thread_id == 1) ? N : start + chunk_size;
+    
+    int rowSize = N / 2; // Assuming two threads
+    int start = threadNum * rowSize;
+    int end = (threadNum == 1) ? N : start + rowSize;
 
-    for (int i = start; i < end; ++i) {
-        for (int j = 0; j < N; ++j) {
+    for (int i = start; i < end; i++) {
+        for (int j = 0; j < N; j++) {
             C[i][j] = 0;
-            for (int k = 0; k < N; ++k) {
+            for (int k = 0; k < N; k++) {
                 C[i][j] += A[i][k] * B[k][j];
             }
         }
@@ -42,84 +54,54 @@ void* multiplyThread(void* arg) {
     pthread_exit(NULL);
 }
 
-// Function to initialize a matrix with random values
-void initializeMatrix(int** matrix, int N) {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            matrix[i][j] = rand() % 10; // initialize with random values between 0 and 9
-        }
-    }
-}
 
-// Function to display a matrix
-void displayMatrix(int** matrix, int N) {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            cout << matrix[i][j] << " ";
-        }
-        cout << endl;
-    }
-}
-
-
-int main() {
+int main()
+{
     int N;
     cout << "Enter the size of the matrices (N): ";
     cin >> N;
 
-    // Allocate memory for matrices
     int** A = new int*[N];
     int** B = new int*[N];
     int** C = new int*[N];
-    for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; i++)
+    {
         A[i] = new int[N];
         B[i] = new int[N];
         C[i] = new int[N];
     }
 
-    // Seed random number generator
+    
     srand(time(0));
 
-    // Initialize matrices A and B with random values
-    initializeMatrix(A, N);
-    initializeMatrix(B, N);
+    FillMatrix(A, N);
+    FillMatrix(B, N);
 
-    // Measure execution time of matrix multiplication
     auto start = high_resolution_clock::now();
     
-    // Create threads for parallel computation
-    pthread_t threads[2]; // Assuming two threads
-    ThreadData thread_data[2];
-    for (int i = 0; i < 2; ++i) {
-        thread_data[i].thread_id = i;
-        thread_data[i].A = A;
-        thread_data[i].B = B;
-        thread_data[i].C = C;
-        thread_data[i].N = N;
-        pthread_create(&threads[i], NULL, multiplyThread, (void*)&thread_data[i]);
+    
+    pthread_t threads[2]; 
+    thread matrixThread[2];
+    for (int i = 0; i < 2; i++) 
+    {
+        matrixThread[i].threadNum = i;
+        matrixThread[i].A = A;
+        matrixThread[i].B = B;
+        matrixThread[i].C = C;
+        matrixThread[i].N = N;
+        pthread_create(&threads[i], NULL, multiply, (void*)&matrixThread[i]);
     }
 
-    // Wait for all threads to finish
-    for (int i = 0; i < 2; ++i) {
+  
+    for (int i = 0; i < 2; i++) {
         pthread_join(threads[i], NULL);
     }
     
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
 
-    // Print execution time
-    cout << "Execution time of matrix multiplication: " << duration.count() << " microseconds." << endl;
-
-    // Free dynamically allocated memory
-    for (int i = 0; i < N; ++i) {
-        delete[] A[i];
-        delete[] B[i];
-        delete[] C[i];
-    }
-    delete[] A;
-    delete[] B;
-    delete[] C;
+   
+    cout << "Execution time " << duration.count() << " microseconds." << endl;
 
     return 0;
 }
-
