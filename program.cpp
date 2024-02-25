@@ -1,55 +1,66 @@
-#include <chrono>
-#include <cstdlib>
 #include <iostream>
-#include <time.h>
+#include <vector>
+#include <chrono>
+#include <cstdlib> // For rand() function
 
-using namespace std::chrono;
 using namespace std;
+using namespace std::chrono;
 
-// assigning random values to fill the array 
-void randomVector1(int v1[], int size) {
-  for (int i = 0; i < size; i++) {
-    v1[i] = rand() % 100;
-  }
-}
-// assigning random values to fill the array 
-void randomVector2(int v2[], int size) {
-  for (int i = 0; i < size; i++) {
-    v2[i] = rand() % 100;
-  }
-}
-// addition of the two arrays to form the third one 
-void add( int *v1, int *v2, int *v3, int size)
-{
-    for (int i = 0; i < size; i++) {
-    v3[i] = v1[i] + v2[i];
-  }
+// Function that divides the array and then returns the index of positioned element
+int dividing(vector<int>& arr, int low, int high) {
+    int rightEnd = arr[high]; // selecting the right most element to compare
+    int i = low - 1; // Index of smaller element smaller than the element that has to be placed
+
+    for (int j = low; j < high; j++) {
+        // If current element is smaller than the right most
+        if (arr[j] < rightEnd) {
+            i++; // elements moves to the left 
+            swap(arr[i], arr[j]); // Swap arr[i] and arr[j]
+        }
+    }
+    swap(arr[i + 1], arr[high]); // Swap arr[i+1] and right most elment
+    return i + 1;
 }
 
+// Function to perform quicksort
+void quickSort(vector<int>& arr, int low, int high) {
+    if (low < high) { // it checks if the index is already divided 
+        // dividing index
+        int pi = dividing(arr, low, high);
 
-  
+        // sorts the element in left or right from middle 
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
+
 int main() {
-  unsigned long size = 100000000; // size of arrays 
-  srand(time(0));
-  int *v1, *v2, *v3; // initalising pointers 
-  
-  // beginning of the execution time measurement high resoulution clock
-  auto start = high_resolution_clock::now();
- // allocating integral values to arrays 
-  v1 = (int *)malloc(size * sizeof(int));
-  v2 = (int *)malloc(size * sizeof(int));
-  v3 = (int *)malloc(size * sizeof(int));
+    // 
+    srand(time(0));
 
-  // calling functions 
-  randomVector1(v1, size);
-  randomVector2(v2, size);
+    // random values for the array
+    vector<int> arr;
+    for (int i = 0; i < 100; ++i) {
+        arr.push_back(rand() % 100);
+    }
+    int n = arr.size();
 
-  add(v1,v2,v3,size);
+   
 
-  auto stop = high_resolution_clock::now(); // execution time measuring stops 
-  auto duration = duration_cast<microseconds>(stop - start); 
-  cout << "Time taken by function :" << duration.count() << " microseconds"
-    << endl;
-  
-  return 0;
+    // Start time measurement
+    auto start = high_resolution_clock::now();
+
+    // Perform quicksort
+    quickSort(arr, 0, n - 1);
+
+    // End time measurement
+    auto stop = high_resolution_clock::now();
+
+    
+
+    
+    auto duration = duration_cast<nanoseconds>(stop - start);
+    cout << "Time taken by quicksort: " << duration.count() << " nanoseconds " << endl;
+
+    return 0;
 }
